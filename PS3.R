@@ -45,5 +45,30 @@ library(pryr)
 object_size(new_data)
 pivoted = pivot_wider(new_data,names_from = start_date,values_from = pct)
 object_size(pivoted)
+# This gives 211 rows for 6 candidates, meaning that not every possible combo of candidate-state actually shows up.
 
 #3
+library(fivethirtyeight)
+polls = read_csv('https://jmontgomery.github.io/PDS/Datasets/president_primary_polls_feb2020.csv')
+Endorsements = endorsements_2020
+Endorsements = rename(Endorsements,candidate_name = endorsee)
+Endorsements = as_tibble(Endorsements)
+#Filtering and subsetting the polls data
+polls = polls %>%
+  filter(candidate_name %in% frontrunners) %>%
+  select(candidate_name,sample_size,start_date,party,pct)
+#Two discrepancies between the data...
+polls$candidate_name = recode(polls$candidate_name, "Bernard Sanders" = "Bernie Sanders", "Joseph R. Biden Jr." = "Joe Biden")
+#Doing an inner join of these two datasets (i have no idea why you want us to do this...)
+joined_data = inner_join(Endorsements, polls, by = 'candidate_name')
+#Counting the number of endorsements
+num_endorsements = Endorsements %>%
+  count(candidate_name) %>%
+  filter(candidate_name %in% polls$candidate_name)
+# Plotting
+library(ggplot2)
+p = ggplot(num_endorsements, aes(x = candidate_name,y = n)) + geom_bar(stat = "identity")
+p = p + theme_dark()
+p + ylab("Number of Endorsements") + xlab("Candidate")
+
+#4
