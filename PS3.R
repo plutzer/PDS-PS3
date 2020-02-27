@@ -72,3 +72,49 @@ p = p + theme_dark()
 p + ylab("Number of Endorsements") + xlab("Candidate")
 
 #4
+rm(list = ls())
+library(tidyverse)
+library(tm)
+library(lubridate)
+library(wordcloud)
+tweets = read_csv('https://politicaldatascience.com/PDS/Datasets/trump_tweets.csv')
+#Making date and time columns
+tweets$date = as.Date(tweets$created_at,"%m,%d/%Y")
+tweets$time = map_chr(tweets$created_at,function(x) {unlist(str_split(x,pattern = " "))[2]})
+min(tweets$date)
+max(tweets$date)
+#Filter out retweets
+tweets = tweets %>%
+  filter(!is_retweet)
+tweets = tweets %>%
+  arrange(-retweet_count)
+print(tweets[1:5,]$text)
+extra_stop_words = c('see', 'people','new','want','one','even','must','need','done','back','just','going', 'know','can','said','like','many','like','realdonaldtrump')
+text = tweets$text
+text = paste(unlist(str_split(text,pattern = " ")),sep = " ")
+text %>%
+  gsub("https\\S*", "", text) %>%
+  gsub("@\\S*", "", text) %>%
+  gsub("amp", "", text) %>% 
+  gsub("[\r\n]", "", text) %>%
+  gsub("[[:punct:]]", "", text)
+words = unlist(str_split(text,pattern = " "))
+u_words = unique(words)
+t_words = sort(table(words),decreasing = T)[1:50]
+
+wordcloud(words = t_words,freq = 1)
+
+
+textcorp = Corpus(VectorSource(text))
+rm(text) #to save memory
+toSpace = content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+textcorp = tm_map(textcorp, toSpace, "/")
+textcorp = tm_map(textcorp, toSpace, "@")
+textcorp = tm_map(textcorp, toSpace, "\\|")
+textcorp = tm_map(textcorp, removeWords, extra_stop_words) 
+textcorp = tm_map(textcorp, removePunctuation)
+textcorp = tm_map(textcorp, stripWhitespace)
+dtm = TermDocumentMatrix(textcorp,list(weighting = weightTfIdf))
+
+
+
