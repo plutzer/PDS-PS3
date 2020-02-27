@@ -33,4 +33,17 @@ ggplot(primaryPolls) +
   ylab("Polling Percentage") + 
   labs(color = "State \nDelegates")
 
+#2
+#Start again with the original data
+data = read.csv('https://jmontgomery.github.io/PDS/Datasets/president_primary_polls_feb2020.csv', stringsAsFactors = F)
+data$start_date<-as.Date(data$start_date, "%m/%d/%Y")
 
+new_data = data %>%
+  filter(candidate_name %in% frontrunners) %>%
+  select(candidate_name,state,pct,start_date)
+library(pryr)
+object_size(new_data)
+pivoted = pivot_wider(new_data,names_from = start_date,values_from = pct)
+object_size(pivoted)
+
+#3
